@@ -1,0 +1,123 @@
+((.venv) ) sumeyayasir@MacBook-Air-10 DD2480-Assignment4 % pytest tests/test_numeric_logic.py
+============================================================ test session starts ============================================================
+platform darwin -- Python 3.12.12, pytest-8.3.5, pluggy-1.6.0
+PySide6 6.8.0.2 -- Qt runtime 6.8.0 -- Qt compiled 6.8.0
+rootdir: /Users/sumeyayasir/Desktop/DD2480-Assignment4
+configfile: pyproject.toml
+plugins: qt-4.4.0, syrupy-4.9.1, cov-6.1.1
+collected 5 items                                                                                                                           
+
+tests/test_numeric_logic.py FFFFF                                                                                                     [100%]
+
+================================================================= FAILURES ==================================================================
+______________________________________________________ test_add_numeric_field_to_entry ______________________________________________________
+
+library = <tagstudio.core.library.alchemy.library.Library object at 0x12135fcb0>
+
+    def test_add_numeric_field_to_entry(library: Library):
+        """Verifierar att ett numeriskt fält kan läggas till en entry (REQ-01)"""
+        # RÄTTAD IMPORT: Peikar nu på alchemy.fields istället för definitions
+>       from tagstudio.core.library.alchemy.fields import IntegerField
+E       ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignment4/src/tagstudio/core/library/alchemy/fields.py)
+
+tests/test_numeric_logic.py:15: ImportError
+----------------------------------------------------------- Captured stdout setup -----------------------------------------------------------
+2026-02-27 15:56:09 [info     ] [Library] Opening SQLite Library connection_string=sqlite:///:memory: library_dir=PosixPath('/var/folders/lq/3xs0pl790j31gytfp5vd59jr0000gn/T/tmpc02uxrje')
+2026-02-27 15:56:09 [info     ] [Library] DB_VERSION: 0
+2026-02-27 15:56:09 [info     ] [Library] Creating DB tables...
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=1 tag_ids=1000
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=2 tag_ids=2000
+_____________________________________________________ test_numeric_field_stores_integer _____________________________________________________
+
+library = <tagstudio.core.library.alchemy.library.Library object at 0x121489eb0>
+
+    def test_numeric_field_stores_integer(library: Library):
+        """Verifierar att ett heltalsvärde sparas och hämtas korrekt (REQ-01)"""
+>       from tagstudio.core.library.alchemy.fields import IntegerField
+E       ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignment4/src/tagstudio/core/library/alchemy/fields.py)
+
+tests/test_numeric_logic.py:29: ImportError
+----------------------------------------------------------- Captured stdout setup -----------------------------------------------------------
+2026-02-27 15:56:09 [info     ] [Library] Opening SQLite Library connection_string=sqlite:///:memory: library_dir=PosixPath('/var/folders/lq/3xs0pl790j31gytfp5vd59jr0000gn/T/tmpc02uxrje')
+2026-02-27 15:56:09 [info     ] [Library] DB_VERSION: 0
+2026-02-27 15:56:09 [info     ] [Library] Creating DB tables...
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=1 tag_ids=1000
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=2 tag_ids=2000
+_________________________________________________________ test_update_numeric_field _________________________________________________________
+
+library = <tagstudio.core.library.alchemy.library.Library object at 0x12154afc0>
+
+    def test_update_numeric_field(library: Library):
+        """Verifierar att värdet i ett numeriskt fält kan uppdateras (REQ-01)"""
+>       from tagstudio.core.library.alchemy.fields import IntegerField
+E       ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignment4/src/tagstudio/core/library/alchemy/fields.py)
+
+tests/test_numeric_logic.py:48: ImportError
+----------------------------------------------------------- Captured stdout setup -----------------------------------------------------------
+2026-02-27 15:56:09 [info     ] [Library] Opening SQLite Library connection_string=sqlite:///:memory: library_dir=PosixPath('/var/folders/lq/3xs0pl790j31gytfp5vd59jr0000gn/T/tmpc02uxrje')
+2026-02-27 15:56:09 [info     ] [Library] DB_VERSION: 0
+2026-02-27 15:56:09 [info     ] [Library] Creating DB tables...
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=1 tag_ids=1000
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=2 tag_ids=2000
+_________________________________________________________ test_remove_numeric_field _________________________________________________________
+
+library = <tagstudio.core.library.alchemy.library.Library object at 0x1215ab7a0>
+
+    def test_remove_numeric_field(library: Library):
+        """Verifierar att fältet kan tas bort från en entry (REQ-01)"""
+>       from tagstudio.core.library.alchemy.fields import IntegerField
+E       ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignment4/src/tagstudio/core/library/alchemy/fields.py)
+
+tests/test_numeric_logic.py:69: ImportError
+----------------------------------------------------------- Captured stdout setup -----------------------------------------------------------
+2026-02-27 15:56:09 [info     ] [Library] Opening SQLite Library connection_string=sqlite:///:memory: library_dir=PosixPath('/var/folders/lq/3xs0pl790j31gytfp5vd59jr0000gn/T/tmpc02uxrje')
+2026-02-27 15:56:09 [info     ] [Library] DB_VERSION: 0
+2026-02-27 15:56:09 [info     ] [Library] Creating DB tables...
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=1 tag_ids=1000
+2026-02-27 15:56:09 [info     ] [Library][add_tags_to_entries] entry_ids=2 tag_ids=2000
+_______________________________________________________ test_numeric_comparison_query _______________________________________________________
+
+library = <tagstudio.core.library.alchemy.library.Library object at 0x12161a060>
+
+    def test_numeric_comparison_query(library: Library):
+        """Verifierar att numeriska fält kan användas i jämförelser (REQ-05)"""
+>       from tagstudio.core.library.alchemy.fields import IntegerField
+E       ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignment4/src/tagstudio/core/library/alchemy/fields.py)
+
+tests/test_numeric_logic.py:90: ImportError
+----------------------------------------------------------- Captured stdout setup -----------------------------------------------------------
+2026-02-27 15:56:09 [info     ] [Library] Opening SQLite Library connection_string=sqlite:///:memory: library_dir=PosixPath('/var/folders/lq/3xs0pl790j31gytfp5vd59jr0000gn/T/tmpc02uxrje')
+2026-02-27 15:56:09 [info     ] [Library] DB_VERSION: 0
+2026-02-27 15:56:09 [info     ] [Library] Creating DB tables...
+2026-02-27 15:56:10 [info     ] [Library][add_tags_to_entries] entry_ids=1 tag_ids=1000
+2026-02-27 15:56:10 [info     ] [Library][add_tags_to_entries] entry_ids=2 tag_ids=2000
+============================================================= warnings summary ==============================================================
+src/tagstudio/qt/views/thumb_button.py:25
+  /Users/sumeyayasir/Desktop/DD2480-Assignment4/src/tagstudio/qt/views/thumb_button.py:25: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    class ThumbButton(QPushButtonWrapper):
+
+.venv/lib/python3.12/site-packages/pydub/utils.py:14
+  /Users/sumeyayasir/Desktop/DD2480-Assignment4/.venv/lib/python3.12/site-packages/pydub/utils.py:14: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+.venv/lib/python3.12/site-packages/pydub/utils.py:170
+  /Users/sumeyayasir/Desktop/DD2480-Assignment4/.venv/lib/python3.12/site-packages/pydub/utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
+    warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
+
+tests/test_numeric_logic.py::test_add_numeric_field_to_entry
+tests/test_numeric_logic.py::test_numeric_field_stores_integer
+tests/test_numeric_logic.py::test_update_numeric_field
+tests/test_numeric_logic.py::test_remove_numeric_field
+tests/test_numeric_logic.py::test_numeric_comparison_query
+  /Users/sumeyayasir/Desktop/DD2480-Assignment4/.venv/lib/python3.12/site-packages/sqlalchemy/orm/instrumentation.py:507: DeprecationWarning: Use `Version` for storing version, and `ts_ignore` system for file exclusion.
+    instance = self.class_.__new__(self.class_)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================================================== short test summary info ==========================================================
+FAILED tests/test_numeric_logic.py::test_add_numeric_field_to_entry - ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignmen...
+FAILED tests/test_numeric_logic.py::test_numeric_field_stores_integer - ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignmen...
+FAILED tests/test_numeric_logic.py::test_update_numeric_field - ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignmen...
+FAILED tests/test_numeric_logic.py::test_remove_numeric_field - ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignmen...
+FAILED tests/test_numeric_logic.py::test_numeric_comparison_query - ImportError: cannot import name 'IntegerField' from 'tagstudio.core.library.alchemy.fields' (/Users/sumeyayasir/Desktop/DD2480-Assignmen...
+======================================================= 5 failed, 8 warnings in 0.72s =======================================================
+((.venv) ) sumeyayasir@MacBook-Air-10 DD2480-Assignment4 % 
