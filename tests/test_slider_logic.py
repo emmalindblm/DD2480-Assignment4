@@ -58,3 +58,9 @@ def test_slider_handles_value_above_maximum(library: Library):
     )
     retrieved_entry = unwrap(library.get_entry_full(entry_id))
     assert retrieved_entry.slider_fields[0].value == 100.2
+
+
+def test_slider_inherits_numeric_functionality(library: Library):
+    entry_id = create_slider_entry(library, "test_inherit.txt", value=50, min=10, max=100.2, step=1)
+    retrieved_entry = unwrap(library.get_entry_full(entry_id))
+    assert retrieved_entry.slider_fields[0].value == 50
