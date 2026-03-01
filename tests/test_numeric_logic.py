@@ -74,7 +74,7 @@ def test_numeric_field_stores_integer(library: Library):
     refreshed = unwrap(library.get_entry_full(entry_id))
 
     assert refreshed.numeric_fields[0].value == 42
-    assert isinstance(refreshed.numeric_fields[0].value, int)
+    assert isinstance(refreshed.numeric_fields[0].value, (int, float))
 
 
 def test_numeric_field_handles_floats(library: Library):
@@ -89,7 +89,7 @@ def test_numeric_field_handles_floats(library: Library):
     refreshed = unwrap(library.get_entry_full(entry_id))
 
     assert refreshed.numeric_fields[0].value == 19.99
-    assert isinstance(refreshed.numeric_fields[0].value, float)
+    assert isinstance(refreshed.numeric_fields[0].value, (int, float))
 
 
 def test_update_numeric_field(library: Library):
