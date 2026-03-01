@@ -5,6 +5,7 @@
 # NOTE: This file contains necessary use of deprecated first-party code until that
 # code is removed in a future version (prefs).
 # pyright: reportDeprecated=false
+
 from pathlib import Path
 
 from tagstudio.core.library.alchemy.fields import NumericField
