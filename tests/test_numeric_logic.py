@@ -41,6 +41,26 @@ def test_add_numeric_field_to_entry(library: Library):
     assert len(ids) == 1
 
 
+def test_remove_numeric_field(library: Library):
+    """REQ-01b"""
+
+    entry = Entry(
+        path=Path("test_remove.txt"),
+        folder=unwrap(library.folder),
+        fields=[NumericField(type_key="AGE", value=30)],
+    )
+
+    entry_id = library.add_entries([entry])[0]
+    refreshed = unwrap(library.get_entry_full(entry_id))
+
+    assert len(refreshed.numeric_fields) == 1
+
+    library.remove_entry_field(entry_id, refreshed.numeric_fields[0])
+
+    updated_entry = unwrap(library.get_entry_full(entry_id))
+    assert len(updated_entry.numeric_fields) == 0
+
+
 def test_numeric_field_stores_integer(library: Library):
     """REQ-01c"""
 
