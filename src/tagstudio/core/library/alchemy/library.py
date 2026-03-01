@@ -1173,6 +1173,38 @@ class Library:
     def remove_tag(self, tag_id: int) -> bool:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
+                # Migrate entries from this tag to its parent tags before deletion
+                # so entries remain searchable under the parent hierarchy.
+                parent_ids = [
+                    row.parent_id
+                    for row in session.execute(
+                        select(TagParent.parent_id).where(TagParent.child_id == tag_id)
+                    ).all()
+                ]
+                if parent_ids:
+                    entry_ids = [
+                        row.entry_id
+                        for row in session.execute(
+                            select(TagEntry.entry_id).where(TagEntry.tag_id == tag_id)
+                        ).all()
+                    ]
+                    for parent_id in parent_ids:
+                        for entry_id in entry_ids:
+                            already_exists = session.execute(
+                                select(TagEntry).where(
+                                    and_(
+                                        TagEntry.tag_id == parent_id,
+                                        TagEntry.entry_id == entry_id,
+                                    )
+                                )
+                            ).first()
+                            if not already_exists:
+                                session.execute(
+                                    TagEntry.__table__.insert().values(
+                                        tag_id=parent_id, entry_id=entry_id
+                                    )
+                                )
+
                 session.execute(delete(TagAlias).where(TagAlias.tag_id == tag_id))
                 session.execute(delete(TagEntry).where(TagEntry.tag_id == tag_id))
                 session.execute(

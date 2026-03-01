@@ -5,21 +5,21 @@
 from collections.abc import Callable
 from pathlib import Path
 
-import pytest
-
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 
 
-def test_delete_child_tag_preserves_parent_search(library: Library, generate_tag: Callable[..., Tag]):
+def test_delete_child_tag_preserves_parent_search(
+    library: Library, generate_tag: Callable[..., Tag]
+):
     """When a child tag is deleted, entries tagged only with the child
     should still appear in searches for the parent tag."""
     # create parent tag A and child tag B
     parent = unwrap(library.add_tag(generate_tag("genre", id=3000)))
     child = unwrap(library.add_tag(generate_tag("rock", id=3001)))
-    library.add_parent_tag(child.id, parent.id)
+    library.add_parent_tag(parent.id, child.id)
 
     # create an entry tagged with only the child tag
     entry = Entry(
@@ -32,7 +32,7 @@ def test_delete_child_tag_preserves_parent_search(library: Library, generate_tag
 
     # searching for the parent should find the entry (via child hierarchy)
     results = library.search_library(
-        BrowsingState.from_tag_name("genre"),
+        BrowsingState.from_search_query("genre"),
         page_size=500,
     )
     assert results.total_count >= 1
@@ -42,18 +42,20 @@ def test_delete_child_tag_preserves_parent_search(library: Library, generate_tag
 
     # searching for the parent should still find the entry
     results = library.search_library(
-        BrowsingState.from_tag_name("genre"),
+        BrowsingState.from_search_query("genre"),
         page_size=500,
     )
     assert results.total_count >= 1
 
 
-def test_delete_child_tag_entry_becomes_untagged(library: Library, generate_tag: Callable[..., Tag]):
+def test_delete_child_tag_entry_becomes_untagged(
+    library: Library, generate_tag: Callable[..., Tag]
+):
     """When a child tag is deleted and the entry has no other tags,
     it should appear in special:untagged searches."""
     parent = unwrap(library.add_tag(generate_tag("category", id=3100)))
     child = unwrap(library.add_tag(generate_tag("subcategory", id=3101)))
-    library.add_parent_tag(child.id, parent.id)
+    library.add_parent_tag(parent.id, child.id)
 
     entry = Entry(
         path=Path("lonely_file.txt"),
@@ -82,12 +84,14 @@ def test_delete_child_tag_entry_becomes_untagged(library: Library, generate_tag:
     assert results.total_count > untagged_before
 
 
-def test_delete_child_tag_keeps_direct_parent_tag(library: Library, generate_tag: Callable[..., Tag]):
+def test_delete_child_tag_keeps_direct_parent_tag(
+    library: Library, generate_tag: Callable[..., Tag]
+):
     """When an entry has both parent and child tags directly applied,
     deleting the child should leave the parent tag intact."""
     parent = unwrap(library.add_tag(generate_tag("animal", id=3200)))
     child = unwrap(library.add_tag(generate_tag("dog", id=3201)))
-    library.add_parent_tag(child.id, parent.id)
+    library.add_parent_tag(parent.id, child.id)
 
     entry = Entry(
         path=Path("pet_photo.jpg"),
