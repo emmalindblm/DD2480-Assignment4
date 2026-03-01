@@ -14,6 +14,12 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.core.library.alchemy.registries.ignored_registry import IgnoredRegistry
 from tagstudio.core.library.ignore import Ignore
 
+from tagstudio.core.library.refresh import RefreshTracker
+from tagstudio.core.library.alchemy.registries.ignored_registry import IgnoredRegistry
+from tagstudio.core.library.ignore import Ignore
+from tagstudio.core.utils.types import unwrap
+from tagstudio.core.library.alchemy.library import Library
+    
 
 CWD = Path(__file__).parent
 
@@ -70,3 +76,18 @@ def test_refresh_tracker_adds_new_file(library: Library):
 
     # The file should be detected as new
     assert Path("example.txt") in tracker.files_not_in_library
+
+
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_removing_entry_does_not_delete_file(library: Library):
+    library_dir = unwrap(library.library_dir)
+
+    file_path = library_dir / "file.txt"
+    file_path.touch()
+
+    tracker = RefreshTracker(library)
+    library.included_files.clear()
+    list(tracker.refresh_dir(library_dir, force_internal_tools=True))
+    list(tracker.save_new_files())
+
+    assert file_path.exists()
