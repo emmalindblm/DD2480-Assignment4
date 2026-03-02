@@ -6,6 +6,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
 from tagstudio.qt.mixed.numeric_field import NumericWidget
+from tagstudio.qt.mixed.slider_field import SliderWidget
 from tagstudio.qt.mixed.text_field import TextWidget
 from tagstudio.qt.ts_qt import QtDriver
 
@@ -86,3 +87,19 @@ def test_numeric_renders_numeric_widget(
         c for c in panel.field_containers_widget.containers if "Numeric" in c.title
     )
     assert isinstance(numeric_container.get_inner_widget(), NumericWidget)
+
+
+def test_slider_renders_slider_widget(qt_driver: QtDriver, library: Library, entry_full: Entry):
+    panel = PreviewPanel(library, qt_driver)
+
+    library.add_field_to_entry(entry_full.id, field_id="SLIDER")
+
+    render_last_widget(
+        panel,
+        qt_driver,
+        entry_full.id,
+    )
+    slider_container = next(
+        c for c in panel.field_containers_widget.containers if "Slider" in c.title
+    )
+    assert isinstance(slider_container.get_inner_widget(), SliderWidget)
