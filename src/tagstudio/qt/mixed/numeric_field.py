@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from PySide6.QtWidgets import QDoubleSpinBox, QHBoxLayout
 
 # Ändra importen här:
