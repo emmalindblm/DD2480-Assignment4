@@ -79,7 +79,9 @@ def library(request, library_dir: Path):  # pyright: ignore
     library_path = library_dir
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
-            library_path = Path(request.param.name)  # pyright: ignore[reportArgumentType]
+            library_path = Path(
+                request.param.name
+            )  # pyright: ignore[reportArgumentType]
         else:
             library_path = Path(request.param)
 
@@ -154,17 +156,23 @@ def entry_full(library: Library):
 
 
 @pytest.fixture
-def qt_driver(library: Library, library_dir: Path):
+def qt_driver(library: Library, library_dir: Path, qtbot):
+    from PySide6.QtWidgets import QApplication
+
     class Args:
         settings_file = library_dir / "settings.toml"
         cache_file = library_dir / "tagstudio.ini"
         open = library_dir
         ci = True
 
-    with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
+    with (
+        patch("tagstudio.qt.ts_qt.Consumer"),
+        patch("tagstudio.qt.ts_qt.CustomRunnable"),
+        patch("tagstudio.qt.ts_qt.QApplication"),
+    ):
         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
 
-        driver.app = Mock()
+        driver.app = QApplication.instance()
         driver.main_window = Mock()
         driver.main_window.thumb_size = 128
         driver.main_window.thumb_layout = ThumbGridLayout(driver, QScrollArea())
@@ -182,7 +190,10 @@ def qt_driver(library: Library, library_dir: Path):
 @pytest.fixture
 def generate_tag() -> Generator[Callable[..., Tag]]:
     def inner(name: str, **kwargs) -> Tag:  # pyright: ignore
-        params = dict(name=name, color_namespace="tagstudio-standard", color_slug="red") | kwargs
+        params = (
+            dict(name=name, color_namespace="tagstudio-standard", color_slug="red")
+            | kwargs
+        )
         return Tag(**params)  # pyright: ignore[reportArgumentType]
 
     yield inner

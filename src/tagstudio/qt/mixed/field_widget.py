@@ -94,7 +94,9 @@ class FieldContainer(QWidget):
         self.copy_button.setMinimumSize(button_size, button_size)
         self.copy_button.setMaximumSize(button_size, button_size)
         self.copy_button.setFlat(True)
-        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.clipboard_icon_128)))
+        self.copy_button.setIcon(
+            QPixmap.fromImage(ImageQt.ImageQt(self.clipboard_icon_128))
+        )
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)
@@ -114,7 +116,9 @@ class FieldContainer(QWidget):
         self.remove_button.setMinimumSize(button_size, button_size)
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
-        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon_128)))
+        self.remove_button.setIcon(
+            QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon_128))
+        )
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)
         self.remove_button.setHidden(True)
@@ -202,6 +206,6 @@ class FieldContainer(QWidget):
 
 
 class FieldWidget(QWidget):
-    def __init__(self, title: str) -> None:
-        super().__init__()
+    def __init__(self, title: str, parent=None):
+        super().__init__(parent)
         self.title: str = title
