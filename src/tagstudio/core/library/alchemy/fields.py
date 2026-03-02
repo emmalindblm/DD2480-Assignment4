@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, override
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import Float, ForeignKey
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from tagstudio.core.library.alchemy.db import Base
@@ -108,6 +108,28 @@ class NumericField(BaseField):
     value: Mapped[float] = mapped_column(nullable=False)
 
 
+class SliderField(NumericField):
+    __tablename__ = "slider_fields"
+    min: Mapped[float] = mapped_column(Float, nullable=False)
+    max: Mapped[float] = mapped_column(Float, nullable=False)
+    step: Mapped[float] = mapped_column(Float, nullable=False)
+
+    @declared_attr
+    def id(self) -> Mapped[int]:
+        return mapped_column(
+            ForeignKey("numeric_fields.id"),
+            primary_key=True,
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.value is not None:
+            if self.value < self.min:
+                self.value = self.min
+            elif self.value > self.max:
+                self.value = self.max
+
+
 @dataclass
 class DefaultField:
     id: int
@@ -119,9 +141,7 @@ class DefaultField:
 class FieldID(Enum):
     """Only for bootstrapping content of DB table."""
 
-    TITLE = DefaultField(
-        id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True
-    )
+    TITLE = DefaultField(id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True)
     AUTHOR = DefaultField(id=1, name="Author", type=FieldTypeEnum.TEXT_LINE)
     ARTIST = DefaultField(id=2, name="Artist", type=FieldTypeEnum.TEXT_LINE)
     URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
@@ -130,13 +150,9 @@ class FieldID(Enum):
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
     DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)
     DATE_CREATED = DefaultField(id=11, name="Date Created", type=FieldTypeEnum.DATETIME)
-    DATE_MODIFIED = DefaultField(
-        id=12, name="Date Modified", type=FieldTypeEnum.DATETIME
-    )
+    DATE_MODIFIED = DefaultField(id=12, name="Date Modified", type=FieldTypeEnum.DATETIME)
     DATE_TAKEN = DefaultField(id=13, name="Date Taken", type=FieldTypeEnum.DATETIME)
-    DATE_PUBLISHED = DefaultField(
-        id=14, name="Date Published", type=FieldTypeEnum.DATETIME
-    )
+    DATE_PUBLISHED = DefaultField(id=14, name="Date Published", type=FieldTypeEnum.DATETIME)
     # ARCHIVED = DefaultField(id=15, name="Archived",  type=CheckboxField.checkbox)
     # FAVORITE = DefaultField(id=16, name="Favorite", type=CheckboxField.checkbox)
     BOOK = DefaultField(id=17, name="Book", type=FieldTypeEnum.TEXT_LINE)
@@ -144,19 +160,14 @@ class FieldID(Enum):
     SERIES = DefaultField(id=19, name="Series", type=FieldTypeEnum.TEXT_LINE)
     MANGA = DefaultField(id=20, name="Manga", type=FieldTypeEnum.TEXT_LINE)
     SOURCE = DefaultField(id=21, name="Source", type=FieldTypeEnum.TEXT_LINE)
-    DATE_UPLOADED = DefaultField(
-        id=22, name="Date Uploaded", type=FieldTypeEnum.DATETIME
-    )
-    DATE_RELEASED = DefaultField(
-        id=23, name="Date Released", type=FieldTypeEnum.DATETIME
-    )
+    DATE_UPLOADED = DefaultField(id=22, name="Date Uploaded", type=FieldTypeEnum.DATETIME)
+    DATE_RELEASED = DefaultField(id=23, name="Date Released", type=FieldTypeEnum.DATETIME)
     VOLUME = DefaultField(id=24, name="Volume", type=FieldTypeEnum.TEXT_LINE)
     ANTHOLOGY = DefaultField(id=25, name="Anthology", type=FieldTypeEnum.TEXT_LINE)
     MAGAZINE = DefaultField(id=26, name="Magazine", type=FieldTypeEnum.TEXT_LINE)
     PUBLISHER = DefaultField(id=27, name="Publisher", type=FieldTypeEnum.TEXT_LINE)
-    GUEST_ARTIST = DefaultField(
-        id=28, name="Guest Artist", type=FieldTypeEnum.TEXT_LINE
-    )
+    GUEST_ARTIST = DefaultField(id=28, name="Guest Artist", type=FieldTypeEnum.TEXT_LINE)
     COMPOSER = DefaultField(id=29, name="Composer", type=FieldTypeEnum.TEXT_LINE)
     COMMENTS = DefaultField(id=30, name="Comments", type=FieldTypeEnum.TEXT_LINE)
     NUMERIC = DefaultField(id=31, name="Numeric", type=FieldTypeEnum.NUMERIC)
+    SLIDER = DefaultField(id=32, name="Slider", type=FieldTypeEnum.SLIDER)

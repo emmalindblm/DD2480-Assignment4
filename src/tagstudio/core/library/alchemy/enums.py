@@ -161,3 +161,4 @@ class FieldTypeEnum(enum.Enum):
     DATETIME = "Datetime"
     BOOLEAN = "Checkbox"
     NUMERIC = "Numeric"
+    SLIDER = "Slider"
