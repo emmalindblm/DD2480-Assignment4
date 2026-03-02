@@ -61,22 +61,25 @@ def test_refresh_multi_byte_filenames(library: Library):
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_refresh_tracker_adds_new_file(library: Library):
+def test_file_is_ignored_after_rule_added(library: Library):
     library_dir = unwrap(library.library_dir)
 
-    # Create a file
     file_path = library_dir / "example.txt"
     file_path.touch()
 
-    tracker = RefreshTracker(library=library)
+    (library_dir / ".TagStudio").mkdir(exist_ok=True)
+
+    ts_ignore = library_dir / ".TagStudio" / ".ts_ignore"
+    ts_ignore.write_text("example.txt\n")
+
+    Ignore.get_patterns(library_dir)
+
+    tracker = RefreshTracker(library)
     library.included_files.clear()
 
-    # Run refresh
     list(tracker.refresh_dir(library_dir, force_internal_tools=True))
 
-    # The file should be detected as new
-    assert Path("example.txt") in tracker.files_not_in_library
-
+    assert Path("example.txt") not in tracker.files_not_in_library
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_removing_entry_does_not_delete_file(library: Library):
@@ -84,6 +87,10 @@ def test_removing_entry_does_not_delete_file(library: Library):
 
     file_path = library_dir / "file.txt"
     file_path.touch()
+
+    (library_dir / ".TagStudio").mkdir(exist_ok=True)
+    ts_ignore = library_dir / ".TagStudio" / ".ts_ignore"
+    ts_ignore.write_text(f"{file_path}\n")
 
     tracker = RefreshTracker(library)
     library.included_files.clear()

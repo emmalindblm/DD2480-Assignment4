@@ -1107,18 +1107,11 @@ class QtDriver(DriverMixin, QObject):
 
             # Refresh ignore patterns
             Ignore.get_patterns(self.lib.library_dir, include_global=True)
-
-            # Create registry instance
             registry = IgnoredRegistry(self.lib)
-
-            # Run ignored detection
             iterator = FunctionIterator(registry.refresh_ignored_entries)
             iterator.run()
-
-            # Remove ignored entries
             registry.remove_ignored_entries()
 
-            # Always update UI (safer)
             self.update_browsing_state()
 
         r.done.connect(on_refresh_done)
