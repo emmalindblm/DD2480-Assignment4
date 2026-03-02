@@ -18,7 +18,6 @@ from tagstudio.core.library.alchemy.fields import (
     BooleanField,
     DatetimeField,
     NumericField,
-    NumericFieldModel,
     TextField,
 )
 from tagstudio.core.library.alchemy.joins import TagParent
@@ -220,7 +219,7 @@ class Entry(Base):
         back_populates="entry",
         cascade="all, delete",
     )
-    numeric_fields: Mapped[list[NumericFieldModel]] = relationship(
+    numeric_fields: Mapped[list[NumericField]] = relationship(
         back_populates="entry",
         cascade="all, delete",
         lazy="selectin",
@@ -275,7 +274,7 @@ class Entry(Base):
                 self.datetime_fields.append(field)
             elif isinstance(field, NumericField):
                 self.numeric_fields.append(
-                    NumericFieldModel(type_key=field.type_key, value=float(field.value))
+                    NumericField(type_key=field.type_key, value=float(field.value))
                 )
             else:
                 raise ValueError(f"Invalid field type: {field}")

@@ -15,8 +15,11 @@ def render_last_widget(panel, qt_driver, entry_id):
     panel.set_selection(qt_driver.selected)
 
 
-def test_text_line_renders_text_widget(qt_driver: QtDriver, library: Library, entry_full: Entry):
+def test_text_line_renders_text_widget(
+    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
+):
     panel = PreviewPanel(library, qt_driver)
+    qtbot.addWidget(panel)
 
     render_last_widget(
         panel,
@@ -29,8 +32,11 @@ def test_text_line_renders_text_widget(qt_driver: QtDriver, library: Library, en
     assert isinstance(title_container.get_inner_widget(), TextWidget)
 
 
-def test_text_box_renders_text_widget(qt_driver: QtDriver, library: Library, entry_full: Entry):
+def test_text_box_renders_text_widget(
+    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
+):
     panel = PreviewPanel(library, qt_driver)
+    qtbot.addWidget(panel)
 
     library.add_field_to_entry(entry_full.id, field_id="DESCRIPTION")
 
@@ -45,8 +51,11 @@ def test_text_box_renders_text_widget(qt_driver: QtDriver, library: Library, ent
     assert isinstance(description_container.get_inner_widget(), TextWidget)
 
 
-def test_date_time_renders_text_widget(qt_driver: QtDriver, library: Library, entry_full: Entry):
+def test_date_time_renders_text_widget(
+    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
+):
     panel = PreviewPanel(library, qt_driver)
+    qtbot.addWidget(panel)
 
     library.add_field_to_entry(entry_full.id, field_id="DATE")
 
@@ -55,13 +64,17 @@ def test_date_time_renders_text_widget(qt_driver: QtDriver, library: Library, en
         qt_driver,
         entry_full.id,
     )
-    date_container = next(c for c in panel.field_containers_widget.containers if "Date" in c.title)
+    date_container = next(
+        c for c in panel.field_containers_widget.containers if "Date" in c.title
+    )
     assert isinstance(date_container.get_inner_widget(), TextWidget)
 
 
-def test_numeric_renders_numeric_widget(qt_driver: QtDriver, library: Library, entry_full: Entry):
+def test_numeric_renders_numeric_widget(
+    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
+):
     panel = PreviewPanel(library, qt_driver)
-
+    qtbot.addWidget(panel)
     library.add_field_to_entry(entry_full.id, field_id="NUMERIC")
 
     render_last_widget(

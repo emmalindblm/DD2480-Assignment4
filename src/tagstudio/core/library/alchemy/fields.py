@@ -103,7 +103,7 @@ class DatetimeField(BaseField):
         raise NotImplementedError
 
 
-class NumericFieldModel(BaseField):
+class NumericField(BaseField):
     __tablename__ = "numeric_fields"
     value: Mapped[float] = mapped_column(nullable=False)
 
@@ -114,18 +114,6 @@ class DefaultField:
     name: str
     type: FieldTypeEnum
     is_default: bool = field(default=False)
-
-
-@dataclass(slots=True, frozen=True)
-class NumericField:
-    type_key: str
-    value: int | float
-
-    def __post_init__(self):
-        # Om SQLite ger oss 42.0 men det egentligen är ett heltal,
-        # gör om det till 42 så att isinstance(x, int) blir sant i testerna.
-        if isinstance(self.value, float) and self.value.is_integer():
-            object.__setattr__(self, "value", int(self.value))
 
 
 class FieldID(Enum):
@@ -171,3 +159,4 @@ class FieldID(Enum):
     )
     COMPOSER = DefaultField(id=29, name="Composer", type=FieldTypeEnum.TEXT_LINE)
     COMMENTS = DefaultField(id=30, name="Comments", type=FieldTypeEnum.TEXT_LINE)
+    NUMERIC = DefaultField(id=31, name="Numeric", type=FieldTypeEnum.NUMERIC)
