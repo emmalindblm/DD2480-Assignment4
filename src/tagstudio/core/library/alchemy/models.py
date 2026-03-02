@@ -236,7 +236,7 @@ class Entry(Base):
         fields: list[BaseField] = []
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
-        fields.extend(self.numeric_fields)
+        fields.extend(f for f in self.numeric_fields if not isinstance(f, SliderField))
         fields.extend(self.slider_fields)
         fields = sorted(fields, key=lambda field: field.type.position)
         return fields

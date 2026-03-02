@@ -803,9 +803,11 @@ class Library:
                 entry_stmt = (
                     entry_stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
+                    .outerjoin(Entry.slider_fields)
                     .options(
                         selectinload(Entry.text_fields),
                         selectinload(Entry.datetime_fields),
+                        selectinload(Entry.slider_fields),
                     )
                 )
             # if with_tags:
