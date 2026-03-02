@@ -207,7 +207,7 @@ def test_preferences(library: Library):
 def test_remove_entry_field(library: Library, entry_full: Entry):
     title_field = entry_full.text_fields[0]
 
-    library.remove_entry_field(title_field, [entry_full.id])
+    library.remove_entry_field(entry_full.id, title_field)
 
     entry = next(library.all_entries(with_joins=True))
     assert not entry.text_fields
@@ -222,7 +222,7 @@ def test_remove_field_entry_with_multiple_field(library: Library, entry_full: En
     assert library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
 
     # remove entry field
-    library.remove_entry_field(title_field, [entry_full.id])
+    library.remove_entry_field(entry_full.id, title_field)
 
     # Then one field should remain
     entry = next(library.all_entries(with_joins=True))
@@ -249,11 +249,12 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
     # When
     # add identical field
     library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
+    new_field = entry_full.text_fields[-1]
 
     # update one of the fields
     library.update_entry_field(
         entry_full.id,
-        title_field,
+        new_field,
         "new value",
     )
 
@@ -376,7 +377,10 @@ def test_update_field_order(library: Library, entry_full: Entry):
 
     # remove the one on first position
     assert title_field.position == 0
-    library.remove_entry_field(title_field, [entry_full.id])
+    library.remove_entry_field(
+        entry_full.id,
+        title_field,
+    )
 
     # recalculate the positions
     library.update_field_position(
