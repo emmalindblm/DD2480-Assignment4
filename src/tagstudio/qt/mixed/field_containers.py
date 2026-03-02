@@ -28,6 +28,7 @@ from tagstudio.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
     TextField,
+    NumericField,
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -36,6 +37,7 @@ from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextWidget
+from tagstudio.qt.mixed.numeric_field import NumericWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
@@ -84,8 +86,12 @@ class FieldContainers(QWidget):
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("entryScrollArea")
-        self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.scroll_area.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
@@ -112,7 +118,10 @@ class FieldContainers(QWidget):
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
-        self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
+        self,
+        entry_tags: set[Tag],
+        entry_fields: list[BaseField],
+        update_badges: bool = True,
     ):
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
@@ -120,7 +129,9 @@ class FieldContainers(QWidget):
         # Write tag container(s)
         if entry_tags:
             categories = self.get_tag_categories(entry_tags)
-            for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
+            for cat, tags in sorted(
+                categories.items(), key=lambda kv: (kv[0] is None, kv)
+            ):
                 self.write_tag_container(
                     container_index, tags=tags, category_tag=cat, is_mixed=False
                 )
@@ -150,7 +161,9 @@ class FieldContainers(QWidget):
         else:
             entry.tags.discard(tag)
 
-        self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
+        self.update_granular(
+            entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False
+        )
 
     def hide_containers(self):
         """Hide all field and tag containers."""
@@ -286,7 +299,9 @@ class FieldContainers(QWidget):
                 )
                 if "pytest" in sys.modules:
                     # for better testability
-                    container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
+                    container.modal = (
+                        modal  # pyright: ignore[reportAttributeAccessIssue]
+                    )
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
@@ -335,7 +350,10 @@ class FieldContainers(QWidget):
                 )
 
         elif field.type.type == FieldTypeEnum.DATETIME:
-            logger.info("[FieldContainers][write_container] Datetime Field", field=field)
+            logger.info(
+                "[FieldContainers][write_container] Datetime Field", field=field
+            )
+
             if not is_mixed:
                 container.set_title(field.type.name)
                 container.set_inline(False)
@@ -374,13 +392,41 @@ class FieldContainers(QWidget):
                         ),
                     )
                 )
+
             else:
                 text = "<i>Mixed Data</i>"
                 title = f"{field.type.name} (Wacky Date)"
                 inner_widget = TextWidget(title, text)
                 container.set_inner_widget(inner_widget)
+        elif field.type.type == FieldTypeEnum.NUMERIC:
+            logger.info("[FieldContainers][write_container] Numeric Field", field=field)
+            container.set_title(field.type.name)
+            container.set_inline(False)
+
+            if not is_mixed:
+                title = f"{field.type.name} (Numeric)"
+                # Vi skickar med titeln och värdet till din nya widget
+                inner_widget = NumericWidget(title, field.value or 0)
+            else:
+                title = f"{field.type.name} (Mixed Numeric)"
+                inner_widget = TextWidget(title, "<i>Mixed Data</i>")
+
+            container.set_inner_widget(inner_widget)
+
+            if not is_mixed:
+                container.set_remove_callback(
+                    lambda: self.remove_message_box(
+                        prompt=self.remove_field_prompt(field.type.name),
+                        callback=lambda: (
+                            self.remove_field(field),
+                            self.update_from_entry(self.cached_entries[0].id),
+                        ),
+                    )
+                )
         else:
-            logger.warning("[FieldContainers][write_container] Unknown Field", field=field)
+            logger.warning(
+                "[FieldContainers][write_container] Unknown Field", field=field
+            )
             container.set_title(field.type.name)
             container.set_inline(False)
             title = f"{field.type.name} (Unknown Field Type)"
@@ -399,7 +445,11 @@ class FieldContainers(QWidget):
         container.setHidden(False)
 
     def write_tag_container(
-        self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
+        self,
+        index: int,
+        tags: set[Tag],
+        category_tag: Tag | None = None,
+        is_mixed: bool = False,
     ):
         """Update/Create tag data for a FieldContainer.
 
@@ -439,7 +489,11 @@ class FieldContainers(QWidget):
             inner_widget.set_tags(tags)
 
             inner_widget.on_update.connect(
-                lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
+                lambda: (
+                    self.update_from_entry(
+                        self.cached_entries[0].id, update_badges=True
+                    )
+                )
             )
         else:
             text = "<i>Mixed Data</i>"
@@ -464,7 +518,7 @@ class FieldContainers(QWidget):
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field,
-            TextField | DatetimeField,
+            TextField | DatetimeField | NumericField,
         ), f"instance: {type(field)}"
 
         entry_ids = [e.id for e in self.cached_entries]

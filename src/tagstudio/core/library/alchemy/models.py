@@ -17,6 +17,7 @@ from tagstudio.core.library.alchemy.fields import (
     BaseField,
     BooleanField,
     DatetimeField,
+    NumericField,
     TextField,
 )
 from tagstudio.core.library.alchemy.joins import TagParent
@@ -218,12 +219,18 @@ class Entry(Base):
         back_populates="entry",
         cascade="all, delete",
     )
+    numeric_fields: Mapped[list[NumericField]] = relationship(
+        back_populates="entry",
+        cascade="all, delete",
+        lazy="selectin",
+    )
 
     @property
     def fields(self) -> list[BaseField]:
         fields: list[BaseField] = []
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
+        fields.extend(self.numeric_fields)
         fields = sorted(fields, key=lambda field: field.type.position)
         return fields
 
@@ -265,6 +272,10 @@ class Entry(Base):
                 self.text_fields.append(field)
             elif isinstance(field, DatetimeField):
                 self.datetime_fields.append(field)
+            elif isinstance(field, NumericField):
+                self.numeric_fields.append(
+                    NumericField(type_key=field.type_key, value=float(field.value))
+                )
             else:
                 raise ValueError(f"Invalid field type: {field}")
 
@@ -297,11 +308,15 @@ class ValueType(Base):
     position: Mapped[int]  # pyright: ignore[reportUninitializedInstanceVariable]
 
     # add relations to other tables
-    text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
+    text_fields: Mapped[list[TextField]] = relationship(
+        "TextField", back_populates="type"
+    )
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         "DatetimeField", back_populates="type"
     )
-    boolean_fields: Mapped[list[BooleanField]] = relationship("BooleanField", back_populates="type")
+    boolean_fields: Mapped[list[BooleanField]] = relationship(
+        "BooleanField", back_populates="type"
+    )
 
     @property
     def as_field(self) -> BaseField:
@@ -310,6 +325,7 @@ class ValueType(Base):
             FieldTypeEnum.TEXT_BOX: TextField,
             FieldTypeEnum.DATETIME: DatetimeField,
             FieldTypeEnum.BOOLEAN: BooleanField,
+            FieldTypeEnum.NUMERIC: NumericField,
         }
 
         return FieldClass[self.type](
@@ -329,7 +345,9 @@ def slugify_field_key(mapper, connection, target):  # pyright: ignore
 
 # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
 # and is set to be removed in a future release.
-@deprecated("Use `Version` for storing version, and `ts_ignore` system for file exclusion.")
+@deprecated(
+    "Use `Version` for storing version, and `ts_ignore` system for file exclusion."
+)
 class Preferences(Base):
     __tablename__ = "preferences"
 
