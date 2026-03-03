@@ -1,0 +1,192 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.0, pytest-8.3.5, pluggy-1.6.0
+PySide6 6.8.0.2 -- Qt runtime 6.8.0 -- Qt compiled 6.8.0
+rootdir: /Users/emma/Documents/GitHub/DD2480-Assignment4-new
+configfile: pyproject.toml
+plugins: qt-4.4.0, syrupy-4.9.1, cov-6.1.1
+collected 231 items
+
+tests/macros/test_dupe_files.py .                                        [  0%]
+tests/macros/test_folders_tags.py .                                      [  0%]
+tests/macros/test_missing_files.py .                                     [  1%]
+tests/macros/test_refresh_dir.py ...                                     [  2%]
+tests/qt/test_build_tag_panel.py .........                               [  6%]
+tests/qt/test_field_containers.py ........                               [  9%]
+tests/qt/test_file_path_options.py .........                             [ 13%]
+tests/qt/test_flow_widget.py .                                           [ 14%]
+tests/qt/test_folders_to_tags.py .                                       [ 14%]
+tests/qt/test_global_settings.py .                                       [ 15%]
+tests/qt/test_item_thumb.py ..                                           [ 16%]
+tests/qt/test_preview_panel.py ...                                       [ 17%]
+tests/qt/test_qt_driver.py ..                                            [ 18%]
+tests/qt/test_resource_manager.py .                                      [ 18%]
+tests/qt/test_tag_panel.py ..                                            [ 19%]
+tests/qt/test_tag_search_panel.py ..                                     [ 20%]
+tests/test_db_migrations.py .....                                        [ 22%]
+tests/test_driver.py ....                                                [ 24%]
+tests/test_json_migration.py 2026-02-26 17:02:15 [info     ] Parity check complete!
+.                                           [ 24%]
+tests/test_library.py ...........................................        [ 43%]
+tests/test_search.py ................................................... [ 65%]
+.......................                                                  [ 75%]
+tests/test_translations.py ............................................. [ 94%]
+............                                                             [100%]
+
+=============================== warnings summary ===============================
+src/tagstudio/qt/views/thumb_button.py:25
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/views/thumb_button.py:25: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    class ThumbButton(QPushButtonWrapper):
+
+.venv/lib/python3.12/site-packages/pydub/utils.py:14
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/.venv/lib/python3.12/site-packages/pydub/utils.py:14: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+.venv/lib/python3.12/site-packages/pydub/utils.py:170
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/.venv/lib/python3.12/site-packages/pydub/utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
+    warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
+
+tests/test_driver.py:16
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/test_driver.py:16: PytestCollectionWarning: cannot collect test class 'TestDriver' because it has a __init__ constructor (from: tests/test_driver.py)
+    class TestDriver(DriverMixin):
+
+tests/macros/test_dupe_files.py: 1 warning
+tests/macros/test_folders_tags.py: 1 warning
+tests/macros/test_missing_files.py: 1 warning
+tests/macros/test_refresh_dir.py: 19 warnings
+tests/qt/test_build_tag_panel.py: 9 warnings
+tests/qt/test_field_containers.py: 8 warnings
+tests/qt/test_file_path_options.py: 9 warnings
+tests/qt/test_folders_to_tags.py: 1 warning
+tests/qt/test_item_thumb.py: 2 warnings
+tests/qt/test_preview_panel.py: 3 warnings
+tests/qt/test_qt_driver.py: 2 warnings
+tests/qt/test_tag_panel.py: 2 warnings
+tests/qt/test_tag_search_panel.py: 2 warnings
+tests/test_db_migrations.py: 20 warnings
+tests/test_json_migration.py: 14 warnings
+tests/test_library.py: 44 warnings
+tests/test_search.py: 74 warnings
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/.venv/lib/python3.12/site-packages/sqlalchemy/orm/instrumentation.py:507: DeprecationWarning: Use `Version` for storing version, and `ts_ignore` system for file exclusion.
+    instance = self.class_.__new__(self.class_)
+
+tests/macros/test_folders_tags.py::test_folders_to_tags
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/macros/test_folders_tags.py:10: DeprecationWarning: Will be replaced with upcoming 'Macros' feature before v9.6
+    folders_to_tags(library)
+
+tests/macros/test_missing_files.py: 1 warning
+tests/qt/test_file_path_options.py: 3 warnings
+tests/qt/test_qt_driver.py: 4 warnings
+tests/test_library.py: 33 warnings
+tests/test_search.py: 66 warnings
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:1072: SADeprecationWarning: DISTINCT ON is currently supported only by the PostgreSQL dialect.  Use of DISTINCT ON for other backends is currently silently ignored, however this usage is deprecated, and will raise CompileError in a future release for all backends that do not support this syntax.
+    query_full=str(statement.compile(compile_kwargs={"literal_binds": True})),
+
+tests/macros/test_missing_files.py: 1 warning
+tests/test_library.py: 23 warnings
+tests/test_search.py: 66 warnings
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:1077: SADeprecationWarning: DISTINCT ON is currently supported only by the PostgreSQL dialect.  Use of DISTINCT ON for other backends is currently silently ignored, however this usage is deprecated, and will raise CompileError in a future release for all backends that do not support this syntax.
+    rows = session.execute(statement).fetchall()
+
+tests/macros/test_refresh_dir.py::test_refresh_new_files[library0-True]
+tests/macros/test_refresh_dir.py::test_refresh_new_files[library0-False]
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/macros/test_refresh_dir.py:23: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, exclude_mode)
+
+tests/macros/test_refresh_dir.py::test_refresh_new_files[library0-True]
+tests/macros/test_refresh_dir.py::test_refresh_new_files[library0-False]
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/macros/test_refresh_dir.py:24: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    library.set_prefs(LibraryPrefs.EXTENSION_LIST, [".md"])
+
+tests/qt/test_file_path_options.py::test_filepath_setting[0]
+tests/qt/test_file_path_options.py::test_filepath_setting[1]
+tests/qt/test_file_path_options.py::test_filepath_setting[2]
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/.venv/lib/python3.12/site-packages/pydantic/main.py:464: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='splash', input_value='default', input_type=str])
+    return self.__pydantic_serializer__.to_python(
+
+tests/qt/test_file_path_options.py::test_title_update[0-<lambda>]
+tests/qt/test_file_path_options.py::test_title_update[1-<lambda>]
+tests/qt/test_file_path_options.py::test_title_update[2-<lambda>]
+tests/qt/test_qt_driver.py::test_browsing_state_update
+tests/qt/test_qt_driver.py::test_browsing_state_update
+tests/qt/test_qt_driver.py::test_browsing_state_update
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:1084: SADeprecationWarning: DISTINCT ON is currently supported only by the PostgreSQL dialect.  Use of DISTINCT ON for other backends is currently silently ignored, however this usage is deprecated, and will raise CompileError in a future release for all backends that do not support this syntax.
+    ids = list(session.scalars(statement))
+
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_6]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_7]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_8]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_9]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_100]
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:752: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore
+
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_6]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_7]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_8]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_9]
+tests/test_db_migrations.py::test_library_migrations[/Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/fixtures/empty_libraries/DB_VERSION_100]
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:753: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:100: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    cancel_button = QPushButtonWrapper(Translations["generic.cancel"])
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:101: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    next_button = QPushButtonWrapper(Translations["generic.continue"])
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:300: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    back_button = QPushButtonWrapper(Translations["generic.navigation.back"])
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:301: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    start_button = QPushButtonWrapper(Translations["json_migration.start_and_preview"])
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:305: DeprecationWarning: Use QPushButton with 'catch warnings' to silence disconnect warnings instead.
+    finish_button: QPushButtonWrapper = QPushButtonWrapper(
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:323: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    self.set_prefs(LibraryPrefs.EXTENSION_LIST, [x.strip(".") for x in json_lib.ext_list])
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/library.py:324: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/test_json_migration.py:47: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    assert len(modal.json_lib.ext_list) == len(modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST))
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:674: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    return self.json_lib.is_exclude_list == self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/test_json_migration.py:51: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):  # pyright: ignore[reportUnknownVariableType]
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:473: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)),
+
+tests/test_json_migration.py::test_json_migration
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/qt/mixed/migration_modal.py:478: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),  # pyright: ignore[reportArgumentType]
+
+tests/test_library.py::test_preferences
+tests/test_library.py::test_preferences
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/tests/test_library.py:204: DeprecationWarning: Use `get_version() for version and `ts_ignore` system for extension exclusion.
+    assert library.prefs(pref) == pref.default
+
+tests/test_search.py::test_single_constraint[-32]
+  /Users/emma/Documents/GitHub/DD2480-Assignment4-new/src/tagstudio/core/library/alchemy/visitors.py:54: SADeprecationWarning: Invoking or_() without arguments is deprecated, and will be disallowed in a future release.   For an empty or_() construct, use 'or_(false(), *args)' or 'or_(False, *args)'.
+    return or_(*bool_expressions)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--------------------------- snapshot report summary ----------------------------
+1 snapshot passed.
+====================== 231 passed, 452 warnings in 20.18s ======================
