@@ -1,0 +1,985 @@
+diff --git a/src/tagstudio/core/library/alchemy/enums.py b/src/tagstudio/core/library/alchemy/enums.py
+index 15e6efa..cbe8a2f 100644
+--- a/src/tagstudio/core/library/alchemy/enums.py
++++ b/src/tagstudio/core/library/alchemy/enums.py
+@@ -160,3 +160,5 @@ class FieldTypeEnum(enum.Enum):
+     TAGS = "Tags"
+     DATETIME = "Datetime"
+     BOOLEAN = "Checkbox"
++    NUMERIC = "Numeric"
++    SLIDER = "Slider"
+diff --git a/src/tagstudio/core/library/alchemy/fields.py b/src/tagstudio/core/library/alchemy/fields.py
+index faffae0..836a4e8 100644
+--- a/src/tagstudio/core/library/alchemy/fields.py
++++ b/src/tagstudio/core/library/alchemy/fields.py
+@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
+ from enum import Enum
+ from typing import TYPE_CHECKING, Any, override
+ 
+-from sqlalchemy import ForeignKey
++from sqlalchemy import Float, ForeignKey
+ from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
+ 
+ from tagstudio.core.library.alchemy.db import Base
+@@ -103,6 +103,33 @@ class DatetimeField(BaseField):
+         raise NotImplementedError
+ 
+ 
++class NumericField(BaseField):
++    __tablename__ = "numeric_fields"
++    value: Mapped[float] = mapped_column(nullable=False)
++
++
++class SliderField(NumericField):
++    __tablename__ = "slider_fields"
++    min: Mapped[float] = mapped_column(Float, nullable=False)
++    max: Mapped[float] = mapped_column(Float, nullable=False)
++    step: Mapped[float] = mapped_column(Float, nullable=False)
++
++    @declared_attr
++    def id(self) -> Mapped[int]:
++        return mapped_column(
++            ForeignKey("numeric_fields.id"),
++            primary_key=True,
++        )
++
++    def __init__(self, **kwargs):
++        super().__init__(**kwargs)
++        if self.value is not None:
++            if self.value < self.min:
++                self.value = self.min
++            elif self.value > self.max:
++                self.value = self.max
++
++
+ @dataclass
+ class DefaultField:
+     id: int
+@@ -142,3 +169,5 @@ class FieldID(Enum):
+     GUEST_ARTIST = DefaultField(id=28, name="Guest Artist", type=FieldTypeEnum.TEXT_LINE)
+     COMPOSER = DefaultField(id=29, name="Composer", type=FieldTypeEnum.TEXT_LINE)
+     COMMENTS = DefaultField(id=30, name="Comments", type=FieldTypeEnum.TEXT_LINE)
++    NUMERIC = DefaultField(id=31, name="Numeric", type=FieldTypeEnum.NUMERIC)
++    SLIDER = DefaultField(id=32, name="Slider", type=FieldTypeEnum.SLIDER)
+diff --git a/src/tagstudio/core/library/alchemy/library.py b/src/tagstudio/core/library/alchemy/library.py
+index ddb1a7b..2eb1876 100644
+--- a/src/tagstudio/core/library/alchemy/library.py
++++ b/src/tagstudio/core/library/alchemy/library.py
+@@ -88,6 +88,7 @@ from tagstudio.core.library.alchemy.fields import (
+     BaseField,
+     DatetimeField,
+     FieldID,
++    SliderField,
+     TextField,
+ )
+ from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
+@@ -95,6 +96,7 @@ from tagstudio.core.library.alchemy.models import (
+     Entry,
+     Folder,
+     Namespace,
++    NumericField,
+     Preferences,
+     Tag,
+     TagAlias,
+@@ -525,7 +527,10 @@ class Library:
+                     )
+                     shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+                 except Exception as e:
+-                    logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
++                    logger.error(
++                        "[ERROR][Library] Could not generate '.ts_ignore' file!",
++                        error=e,
++                    )
+ 
+             # Apply any post-SQL migration patches.
+             if not is_new:
+@@ -798,9 +803,11 @@ class Library:
+                 entry_stmt = (
+                     entry_stmt.outerjoin(Entry.text_fields)
+                     .outerjoin(Entry.datetime_fields)
++                    .outerjoin(Entry.slider_fields)
+                     .options(
+                         selectinload(Entry.text_fields),
+                         selectinload(Entry.datetime_fields),
++                        selectinload(Entry.slider_fields),
+                     )
+                 )
+             # if with_tags:
+@@ -847,11 +854,15 @@ class Library:
+             statement = (
+                 statement.outerjoin(Entry.text_fields)
+                 .outerjoin(Entry.datetime_fields)
++                .outerjoin(Entry.numeric_fields)
++                .outerjoin(Entry.slider_fields)
+                 .outerjoin(Entry.tags)
+             )
+             statement = statement.options(
+                 selectinload(Entry.text_fields),
+                 selectinload(Entry.datetime_fields),
++                selectinload(Entry.numeric_fields),
++                selectinload(Entry.slider_fields),
+                 selectinload(Entry.tags).options(
+                     selectinload(Tag.aliases),
+                     selectinload(Tag.parent_tags),
+@@ -1228,9 +1239,10 @@ class Library:
+ 
+     def remove_entry_field(
+         self,
++        entry_id: int,
+         field: BaseField,
+-        entry_ids: list[int],
+     ) -> None:
++        entry_ids = [entry_id]
+         FieldClass = type(field)  # noqa: N806
+ 
+         logger.info(
+@@ -1261,28 +1273,28 @@ class Library:
+ 
+     def update_entry_field(
+         self,
+-        entry_ids: list[int] | int,
++        entry_id: int,
+         field: BaseField,
+-        content: str | datetime,
++        content: str | datetime | int | float,
+     ):
+-        if isinstance(entry_ids, int):
+-            entry_ids = [entry_ids]
+-
+         FieldClass = type(field)  # noqa: N806
+ 
++        final_content = content
++        if isinstance(field, NumericField):
++            final_content = float(content) if isinstance(content, int | float | str) else 0.0
++
+         with Session(self.engine) as session:
+             update_stmt = (
+                 update(FieldClass)
+                 .where(
+                     and_(
++                        FieldClass.entry_id == entry_id,
++                        FieldClass.type_key == field.type_key,
+                         FieldClass.position == field.position,
+-                        FieldClass.type == field.type,
+-                        FieldClass.entry_id.in_(entry_ids),
+                     )
+                 )
+-                .values(value=content)
++                .values(value=final_content)
+             )
+-
+             session.execute(update_stmt)
+             session.commit()
+ 
+@@ -1303,7 +1315,10 @@ class Library:
+         *,
+         field: ValueType | None = None,
+         field_id: FieldID | str | None = None,
+-        value: str | datetime | None = None,
++        value: str | datetime | int | float | None = None,
++        min_value: int | float | None = None,
++        max_value: int | float | None = None,
++        step: int | float | None = None,
+     ) -> bool:
+         logger.info(
+             "[Library][add_field_to_entry]",
+@@ -1320,7 +1335,7 @@ class Library:
+                 field_id = field_id.name
+             field = self.get_value_type(unwrap(field_id))
+ 
+-        field_model: TextField | DatetimeField
++        field_model: TextField | DatetimeField | NumericField | SliderField
+         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
+             field_model = TextField(
+                 type_key=field.key,
+@@ -1332,6 +1347,19 @@ class Library:
+                 type_key=field.key,
+                 value=value,
+             )
++        elif field.type == FieldTypeEnum.NUMERIC:
++            numeric_value = float(value) if isinstance(value, int | float | str) else 0.0
++            field_model = NumericField(type_key=field.key, value=numeric_value)
++
++        elif field.type == FieldTypeEnum.SLIDER:
++            field_model = SliderField(
++                type_key=field.key,
++                value=value if value is not None else 0.0,
++                min=min_value or 1.0,
++                max=max_value or 100.0,
++                step=step or 1.0,
++            )
++
+         else:
+             raise NotImplementedError(f"field type not implemented: {field.type}")
+ 
+@@ -1654,7 +1682,9 @@ class Library:
+ 
+             statement = select(Tag).where(Tag.id.in_(all_tag_ids))
+             statement = statement.options(
+-                noload(Tag.parent_tags), selectinload(Tag.aliases), joinedload(Tag.color)
++                noload(Tag.parent_tags),
++                selectinload(Tag.aliases),
++                joinedload(Tag.color),
+             )
+             tags = session.scalars(statement).fetchall()
+             for tag in tags:
+@@ -1889,7 +1919,10 @@ class Library:
+                     session.add(pref)
+                     session.commit()
+             except (IntegrityError, AssertionError) as e:
+-                logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
++                logger.error(
++                    "[Library][ERROR] Couldn't add default tag color namespaces",
++                    error=e,
++                )
+                 session.rollback()
+ 
+     # TODO: Remove this once the 'preferences' table is removed.
+@@ -1940,7 +1973,10 @@ class Library:
+ 
+         # assign the field to all entries
+         for entry in entries:
+-            for field_key, field in fields.items():  # pyright: ignore[reportUnknownVariableType]
++            for (
++                field_key,
++                field,
++            ) in fields.items():  # pyright: ignore[reportUnknownVariableType]
+                 if field_key not in existing_fields:
+                     self.add_field_to_entry(
+                         entry_id=entry.id,
+diff --git a/src/tagstudio/core/library/alchemy/models.py b/src/tagstudio/core/library/alchemy/models.py
+index f5c3153..0286949 100644
+--- a/src/tagstudio/core/library/alchemy/models.py
++++ b/src/tagstudio/core/library/alchemy/models.py
+@@ -17,6 +17,8 @@ from tagstudio.core.library.alchemy.fields import (
+     BaseField,
+     BooleanField,
+     DatetimeField,
++    NumericField,
++    SliderField,
+     TextField,
+ )
+ from tagstudio.core.library.alchemy.joins import TagParent
+@@ -218,12 +220,24 @@ class Entry(Base):
+         back_populates="entry",
+         cascade="all, delete",
+     )
++    numeric_fields: Mapped[list[NumericField]] = relationship(
++        back_populates="entry",
++        cascade="all, delete",
++        lazy="selectin",
++    )
++    slider_fields: Mapped[list[SliderField]] = relationship(
++        back_populates="entry",
++        cascade="all, delete",
++        lazy="selectin",
++    )
+ 
+     @property
+     def fields(self) -> list[BaseField]:
+         fields: list[BaseField] = []
+         fields.extend(self.text_fields)
+         fields.extend(self.datetime_fields)
++        fields.extend(f for f in self.numeric_fields if not isinstance(f, SliderField))
++        fields.extend(self.slider_fields)
+         fields = sorted(fields, key=lambda field: field.type.position)
+         return fields
+ 
+@@ -265,6 +279,20 @@ class Entry(Base):
+                 self.text_fields.append(field)
+             elif isinstance(field, DatetimeField):
+                 self.datetime_fields.append(field)
++            elif isinstance(field, SliderField):
++                self.slider_fields.append(
++                    SliderField(
++                        type_key=field.type_key,
++                        value=float(field.value),
++                        min=field.min,
++                        max=field.max,
++                        step=field.step,
++                    )
++                )
++            elif isinstance(field, NumericField):
++                self.numeric_fields.append(
++                    NumericField(type_key=field.type_key, value=float(field.value))
++                )
+             else:
+                 raise ValueError(f"Invalid field type: {field}")
+ 
+@@ -310,6 +338,8 @@ class ValueType(Base):
+             FieldTypeEnum.TEXT_BOX: TextField,
+             FieldTypeEnum.DATETIME: DatetimeField,
+             FieldTypeEnum.BOOLEAN: BooleanField,
++            FieldTypeEnum.NUMERIC: NumericField,
++            FieldTypeEnum.SLIDER: SliderField,
+         }
+ 
+         return FieldClass[self.type](
+diff --git a/src/tagstudio/qt/mixed/field_containers.py b/src/tagstudio/qt/mixed/field_containers.py
+index ae8df91..8bd397e 100644
+--- a/src/tagstudio/qt/mixed/field_containers.py
++++ b/src/tagstudio/qt/mixed/field_containers.py
+@@ -27,6 +27,8 @@ from tagstudio.core.library.alchemy.enums import FieldTypeEnum
+ from tagstudio.core.library.alchemy.fields import (
+     BaseField,
+     DatetimeField,
++    NumericField,
++    SliderField,
+     TextField,
+ )
+ from tagstudio.core.library.alchemy.library import Library
+@@ -35,6 +37,8 @@ from tagstudio.core.utils.types import unwrap
+ from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
+ from tagstudio.qt.mixed.datetime_picker import DatetimePicker
+ from tagstudio.qt.mixed.field_widget import FieldContainer
++from tagstudio.qt.mixed.numeric_field import NumericWidget
++from tagstudio.qt.mixed.slider_field import SliderWidget
+ from tagstudio.qt.mixed.text_field import TextWidget
+ from tagstudio.qt.translations import Translations
+ from tagstudio.qt.views.edit_text_box_modal import EditTextBox
+@@ -112,7 +116,10 @@ class FieldContainers(QWidget):
+         self.update_granular(entry.tags, entry.fields, update_badges)
+ 
+     def update_granular(
+-        self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
++        self,
++        entry_tags: set[Tag],
++        entry_fields: list[BaseField],
++        update_badges: bool = True,
+     ):
+         """Individually update elements of the item preview."""
+         container_len: int = len(entry_fields)
+@@ -336,6 +343,7 @@ class FieldContainers(QWidget):
+ 
+         elif field.type.type == FieldTypeEnum.DATETIME:
+             logger.info("[FieldContainers][write_container] Datetime Field", field=field)
++
+             if not is_mixed:
+                 container.set_title(field.type.name)
+                 container.set_inline(False)
+@@ -374,11 +382,70 @@ class FieldContainers(QWidget):
+                         ),
+                     )
+                 )
++
+             else:
+                 text = "<i>Mixed Data</i>"
+                 title = f"{field.type.name} (Wacky Date)"
+                 inner_widget = TextWidget(title, text)
+                 container.set_inner_widget(inner_widget)
++        elif field.type.type == FieldTypeEnum.NUMERIC:
++            logger.info("[FieldContainers][write_container] Numeric Field", field=field)
++            container.set_title(field.type.name)
++            container.set_inline(False)
++
++            if not is_mixed:
++                title = f"{field.type.name} (Numeric)"
++                # Vi skickar med titeln och värdet till din nya widget
++                inner_widget = NumericWidget(title, field.value or 0)
++            else:
++                title = f"{field.type.name} (Mixed Numeric)"
++                inner_widget = TextWidget(title, "<i>Mixed Data</i>")
++
++            container.set_inner_widget(inner_widget)
++
++            if not is_mixed:
++                container.set_remove_callback(
++                    lambda: self.remove_message_box(
++                        prompt=self.remove_field_prompt(field.type.name),
++                        callback=lambda: (
++                            self.remove_field(field),
++                            self.update_from_entry(self.cached_entries[0].id),
++                        ),
++                    )
++                )
++        elif field.type.type == FieldTypeEnum.SLIDER:
++            container.set_title(field.type.name)
++            container.set_inline(False)
++
++            if not is_mixed:
++                assert isinstance(field, (SliderField | NumericField))
++
++                min_value = getattr(field, "min", 0)
++                max_value = getattr(field, "max", 100)
++                step = getattr(field, "step", 1)
++
++                title = f"{field.type.name} (Slider)"
++                inner_widget = SliderWidget(
++                    title=title,
++                    value=field.value or 0,
++                    min=min_value,
++                    max=max_value,
++                    step=step,
++                )
++                container.set_inner_widget(inner_widget)
++                container.set_remove_callback(
++                    lambda: self.remove_message_box(
++                        prompt=self.remove_field_prompt(field.type.name),
++                        callback=lambda: (
++                            self.remove_field(field),
++                            self.update_from_entry(self.cached_entries[0].id),
++                        ),
++                    )
++                )
++            else:
++                title = f"{field.type.name} (Slider)"
++                inner_widget = SliderWidget(title, 0, 0, 0, 0)
++                container.set_inner_widget(inner_widget)
+         else:
+             logger.warning("[FieldContainers][write_container] Unknown Field", field=field)
+             container.set_title(field.type.name)
+@@ -399,7 +466,11 @@ class FieldContainers(QWidget):
+         container.setHidden(False)
+ 
+     def write_tag_container(
+-        self, index: int, tags: set[Tag], category_tag: Tag | None = None, is_mixed: bool = False
++        self,
++        index: int,
++        tags: set[Tag],
++        category_tag: Tag | None = None,
++        is_mixed: bool = False,
+     ):
+         """Update/Create tag data for a FieldContainer.
+ 
+@@ -464,7 +535,7 @@ class FieldContainers(QWidget):
+         """Update a field in all selected Entries, given a field object."""
+         assert isinstance(
+             field,
+-            TextField | DatetimeField,
++            TextField | DatetimeField | NumericField | SliderField,
+         ), f"instance: {type(field)}"
+ 
+         entry_ids = [e.id for e in self.cached_entries]
+diff --git a/src/tagstudio/qt/mixed/field_widget.py b/src/tagstudio/qt/mixed/field_widget.py
+index d2678b5..cbf1570 100644
+--- a/src/tagstudio/qt/mixed/field_widget.py
++++ b/src/tagstudio/qt/mixed/field_widget.py
+@@ -94,7 +94,9 @@ class FieldContainer(QWidget):
+         self.copy_button.setMinimumSize(button_size, button_size)
+         self.copy_button.setMaximumSize(button_size, button_size)
+         self.copy_button.setFlat(True)
+-        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.clipboard_icon_128)))
++        self.copy_button.setIcon(
++            QPixmap.fromImage(ImageQt.ImageQt(self.clipboard_icon_128))
++        )
+         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
+         self.title_layout.addWidget(self.copy_button)
+         self.copy_button.setHidden(True)
+@@ -114,7 +116,9 @@ class FieldContainer(QWidget):
+         self.remove_button.setMinimumSize(button_size, button_size)
+         self.remove_button.setMaximumSize(button_size, button_size)
+         self.remove_button.setFlat(True)
+-        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon_128)))
++        self.remove_button.setIcon(
++            QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon_128))
++        )
+         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
+         self.title_layout.addWidget(self.remove_button)
+         self.remove_button.setHidden(True)
+@@ -202,6 +206,6 @@ class FieldContainer(QWidget):
+ 
+ 
+ class FieldWidget(QWidget):
+-    def __init__(self, title: str) -> None:
+-        super().__init__()
++    def __init__(self, title: str, parent=None):
++        super().__init__(parent)
+         self.title: str = title
+diff --git a/src/tagstudio/qt/mixed/numeric_field.py b/src/tagstudio/qt/mixed/numeric_field.py
+new file mode 100644
+index 0000000..48abfa4
+--- /dev/null
++++ b/src/tagstudio/qt/mixed/numeric_field.py
+@@ -0,0 +1,28 @@
++# Copyright (C) 2025
++# Licensed under the GPL-3.0 License.
++# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
++
++from PySide6.QtWidgets import QDoubleSpinBox, QHBoxLayout
++
++# Ändra importen här:
++from tagstudio.qt.mixed.field_widget import FieldWidget
++
++
++class NumericWidget(FieldWidget):
++    def __init__(self, title, value: float | int = 0, parent=None):
++        super().__init__(title)  # FieldWidget vill ha title som första argument
++        self._layout = QHBoxLayout(self)
++        self._layout.setContentsMargins(0, 0, 0, 0)
++
++        self.spinbox = QDoubleSpinBox(self)
++        self.spinbox.setRange(-999999999, 999999999)
++        self.spinbox.setValue(float(value))
++
++        self._layout.addWidget(self.spinbox)
++
++    def get_value(self) -> float | int:
++        val = self.spinbox.value()
++        return int(val) if val.is_integer() else val
++
++    def set_value(self, value: float | int):
++        self.spinbox.setValue(float(value))
+diff --git a/src/tagstudio/qt/mixed/slider_field.py b/src/tagstudio/qt/mixed/slider_field.py
+new file mode 100644
+index 0000000..5a62d79
+--- /dev/null
++++ b/src/tagstudio/qt/mixed/slider_field.py
+@@ -0,0 +1,33 @@
++# Copyright (C) 2025
++# Licensed under the GPL-3.0 License.
++# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
++
++from PySide6.QtWidgets import QHBoxLayout, QSlider
++
++from tagstudio.qt.mixed.field_widget import FieldWidget
++
++
++class SliderWidget(FieldWidget):
++    def __init__(
++        self,
++        title: str,
++        value: int | float,
++        min: int | float,
++        max: int | float,
++        step: int | float,
++    ) -> None:
++        super().__init__(title)
++        self.setObjectName("sliderBox")
++        self.base_layout = QHBoxLayout()
++        self.base_layout.setContentsMargins(0, 0, 0, 0)
++        self.setLayout(self.base_layout)
++        self.slider = QSlider()
++        self.slider.setMinimum(int(min))
++        self.slider.setMaximum(int(max))
++        self.slider.setSingleStep(int(step))
++        self.slider.setValue(int(value))
++        self.base_layout.addWidget(self.slider)
++        self.set_value(value)
++
++    def set_value(self, value: int | float) -> None:
++        self.slider.setValue(int(value))
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 54368a5..772c458 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -79,7 +79,9 @@ def library(request, library_dir: Path):  # pyright: ignore
+     library_path = library_dir
+     if hasattr(request, "param"):
+         if isinstance(request.param, TemporaryDirectory):
+-            library_path = Path(request.param.name)  # pyright: ignore[reportArgumentType]
++            library_path = Path(
++                request.param.name
++            )  # pyright: ignore[reportArgumentType]
+         else:
+             library_path = Path(request.param)
+ 
+@@ -154,17 +156,23 @@ def entry_full(library: Library):
+ 
+ 
+ @pytest.fixture
+-def qt_driver(library: Library, library_dir: Path):
++def qt_driver(library: Library, library_dir: Path, qtbot):
++    from PySide6.QtWidgets import QApplication
++
+     class Args:
+         settings_file = library_dir / "settings.toml"
+         cache_file = library_dir / "tagstudio.ini"
+         open = library_dir
+         ci = True
+ 
+-    with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
++    with (
++        patch("tagstudio.qt.ts_qt.Consumer"),
++        patch("tagstudio.qt.ts_qt.CustomRunnable"),
++        patch("tagstudio.qt.ts_qt.QApplication"),
++    ):
+         driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
+ 
+-        driver.app = Mock()
++        driver.app = QApplication.instance()
+         driver.main_window = Mock()
+         driver.main_window.thumb_size = 128
+         driver.main_window.thumb_layout = ThumbGridLayout(driver, QScrollArea())
+@@ -182,7 +190,10 @@ def qt_driver(library: Library, library_dir: Path):
+ @pytest.fixture
+ def generate_tag() -> Generator[Callable[..., Tag]]:
+     def inner(name: str, **kwargs) -> Tag:  # pyright: ignore
+-        params = dict(name=name, color_namespace="tagstudio-standard", color_slug="red") | kwargs
++        params = (
++            dict(name=name, color_namespace="tagstudio-standard", color_slug="red")
++            | kwargs
++        )
+         return Tag(**params)  # pyright: ignore[reportArgumentType]
+ 
+     yield inner
+diff --git a/tests/qt/test_field_widgets.py b/tests/qt/test_field_widgets.py
+new file mode 100644
+index 0000000..c31d55c
+--- /dev/null
++++ b/tests/qt/test_field_widgets.py
+@@ -0,0 +1,105 @@
++# Copyright (C) 2025
++# Licensed under the GPL-3.0 License.
++# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
++
++from tagstudio.core.library.alchemy.library import Library
++from tagstudio.core.library.alchemy.models import Entry
++from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
++from tagstudio.qt.mixed.numeric_field import NumericWidget
++from tagstudio.qt.mixed.slider_field import SliderWidget
++from tagstudio.qt.mixed.text_field import TextWidget
++from tagstudio.qt.ts_qt import QtDriver
++
++
++def render_last_widget(panel, qt_driver, entry_id):
++    qt_driver.toggle_item_selection(entry_id, append=False, bridge=False)
++    panel.set_selection(qt_driver.selected)
++
++
++def test_text_line_renders_text_widget(
++    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
++):
++    panel = PreviewPanel(library, qt_driver)
++    qtbot.addWidget(panel)
++
++    render_last_widget(
++        panel,
++        qt_driver,
++        entry_full.id,
++    )
++    title_container = next(
++        c for c in panel.field_containers_widget.containers if "Title" in c.title
++    )
++    assert isinstance(title_container.get_inner_widget(), TextWidget)
++
++
++def test_text_box_renders_text_widget(
++    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
++):
++    panel = PreviewPanel(library, qt_driver)
++    qtbot.addWidget(panel)
++
++    library.add_field_to_entry(entry_full.id, field_id="DESCRIPTION")
++
++    render_last_widget(
++        panel,
++        qt_driver,
++        entry_full.id,
++    )
++    description_container = next(
++        c for c in panel.field_containers_widget.containers if "Description" in c.title
++    )
++    assert isinstance(description_container.get_inner_widget(), TextWidget)
++
++
++def test_date_time_renders_text_widget(
++    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
++):
++    panel = PreviewPanel(library, qt_driver)
++    qtbot.addWidget(panel)
++
++    library.add_field_to_entry(entry_full.id, field_id="DATE")
++
++    render_last_widget(
++        panel,
++        qt_driver,
++        entry_full.id,
++    )
++    date_container = next(
++        c for c in panel.field_containers_widget.containers if "Date" in c.title
++    )
++    assert isinstance(date_container.get_inner_widget(), TextWidget)
++
++
++def test_numeric_renders_numeric_widget(
++    qt_driver: QtDriver, library: Library, entry_full: Entry, qtbot
++):
++    panel = PreviewPanel(library, qt_driver)
++    qtbot.addWidget(panel)
++    library.add_field_to_entry(entry_full.id, field_id="NUMERIC")
++
++    render_last_widget(
++        panel,
++        qt_driver,
++        entry_full.id,
++    )
++    numeric_container = next(
++        c for c in panel.field_containers_widget.containers if "Numeric" in c.title
++    )
++    assert isinstance(numeric_container.get_inner_widget(), NumericWidget)
++
++
++def test_slider_renders_slider_widget(qt_driver: QtDriver, library: Library, entry_full: Entry):
++    panel = PreviewPanel(library, qt_driver)
++
++    library.add_field_to_entry(entry_full.id, field_id="SLIDER")
++
++    render_last_widget(
++        panel,
++        qt_driver,
++        entry_full.id,
++    )
++    slider_container = next(
++        c for c in panel.field_containers_widget.containers if "Slider" in c.title
++    )
++    assert isinstance(slider_container.get_inner_widget(), SliderWidget)
+diff --git a/tests/test_library.py b/tests/test_library.py
+index 4473445..d897c37 100644
+--- a/tests/test_library.py
++++ b/tests/test_library.py
+@@ -207,7 +207,7 @@ def test_preferences(library: Library):
+ def test_remove_entry_field(library: Library, entry_full: Entry):
+     title_field = entry_full.text_fields[0]
+ 
+-    library.remove_entry_field(title_field, [entry_full.id])
++    library.remove_entry_field(entry_full.id, title_field)
+ 
+     entry = next(library.all_entries(with_joins=True))
+     assert not entry.text_fields
+@@ -222,7 +222,7 @@ def test_remove_field_entry_with_multiple_field(library: Library, entry_full: En
+     assert library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
+ 
+     # remove entry field
+-    library.remove_entry_field(title_field, [entry_full.id])
++    library.remove_entry_field(entry_full.id, title_field)
+ 
+     # Then one field should remain
+     entry = next(library.all_entries(with_joins=True))
+@@ -249,11 +249,12 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
+     # When
+     # add identical field
+     library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
++    new_field = entry_full.text_fields[-1]
+ 
+     # update one of the fields
+     library.update_entry_field(
+         entry_full.id,
+-        title_field,
++        new_field,
+         "new value",
+     )
+ 
+@@ -376,7 +377,10 @@ def test_update_field_order(library: Library, entry_full: Entry):
+ 
+     # remove the one on first position
+     assert title_field.position == 0
+-    library.remove_entry_field(title_field, [entry_full.id])
++    library.remove_entry_field(
++        entry_full.id,
++        title_field,
++    )
+ 
+     # recalculate the positions
+     library.update_field_position(
+diff --git a/tests/test_numeric_logic.py b/tests/test_numeric_logic.py
+new file mode 100644
+index 0000000..b2a5da4
+--- /dev/null
++++ b/tests/test_numeric_logic.py
+@@ -0,0 +1,134 @@
++# Copyright (C) 2025
++# Licensed under the GPL-3.0 License.
++# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
++
++# NOTE: This file contains necessary use of deprecated first-party code until that
++# code is removed in a future version (prefs).
++# pyright: reportDeprecated=false
++
++from pathlib import Path
++
++from tagstudio.core.library.alchemy.fields import NumericField
++from tagstudio.core.library.alchemy.library import Library
++from tagstudio.core.library.alchemy.models import Entry
++from tagstudio.core.utils.types import unwrap
++
++
++def test_numeric_field_stores_numeric_data(library: Library):
++    """REQ-01"""
++    entry = Entry(
++        path=Path("test_numeric.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="QUANTITY", value=100)],
++    )
++
++    entry_id = library.add_entries([entry])[0]
++    refreshed = unwrap(library.get_entry_full(entry_id))
++
++    assert refreshed.numeric_fields[0].value == 100
++
++
++def test_add_numeric_field_to_entry(library: Library):
++    """REQ-01a"""
++
++    entry = Entry(
++        path=Path("test_add.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="RATING", value=5)],
++    )
++
++    ids = library.add_entries([entry])
++    assert len(ids) == 1
++
++
++def test_remove_numeric_field(library: Library):
++    """REQ-01b"""
++
++    entry = Entry(
++        path=Path("test_remove.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="AGE", value=30)],
++    )
++
++    entry_id = library.add_entries([entry])[0]
++    refreshed = unwrap(library.get_entry_full(entry_id))
++
++    assert len(refreshed.numeric_fields) == 1
++
++    library.remove_entry_field(entry_id, refreshed.numeric_fields[0])
++
++    updated_entry = unwrap(library.get_entry_full(entry_id))
++    assert len(updated_entry.numeric_fields) == 0
++
++
++def test_numeric_field_stores_integer(library: Library):
++    """REQ-01c"""
++
++    entry = Entry(
++        path=Path("test_int.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="SCORE", value=42)],
++    )
++
++    entry_id = library.add_entries([entry])[0]
++    refreshed = unwrap(library.get_entry_full(entry_id))
++
++    assert refreshed.numeric_fields[0].value == 42
++    assert isinstance(refreshed.numeric_fields[0].value, (int, float))
++
++
++def test_numeric_field_handles_floats(library: Library):
++    """REQ-01d"""
++    entry = Entry(
++        path=Path("test_float.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="PRICE", value=19.99)],
++    )
++
++    entry_id = library.add_entries([entry])[0]
++    refreshed = unwrap(library.get_entry_full(entry_id))
++
++    assert refreshed.numeric_fields[0].value == 19.99
++    assert isinstance(refreshed.numeric_fields[0].value, (int, float))
++
++
++def test_update_numeric_field(library: Library):
++    """REQ-01e"""
++
++    entry = Entry(
++        path=Path("test_update.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="LEVEL", value=1)],
++    )
++
++    entry_id = library.add_entries([entry])[0]
++    refreshed_entry = unwrap(library.get_entry_full(entry_id))
++    field_to_update = refreshed_entry.numeric_fields[0]
++
++    library.update_entry_field(entry_id, field_to_update, 10)
++
++    updated_entry = unwrap(library.get_entry_full(entry_id))
++    assert updated_entry.numeric_fields[0].value == 10
++
++
++def test_numeric_comparison_query(library: Library):
++    """REQ-01f"""
++
++    e1 = Entry(
++        path=Path("low.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="VAL", value=10)],
++    )
++    e2 = Entry(
++        path=Path("high.txt"),
++        folder=unwrap(library.folder),
++        fields=[NumericField(type_key="VAL", value=100)],
++    )
++
++    library.add_entries([e1, e2])
++
++    all_entries = list(library.all_entries(with_joins=True))
++    vals = [e.numeric_fields[0].value for e in all_entries if e.numeric_fields]
++
++    assert max(vals) == 100
++    assert min(vals) == 10
+diff --git a/tests/test_slider_logic.py b/tests/test_slider_logic.py
+new file mode 100644
+index 0000000..7a6e23e
+--- /dev/null
++++ b/tests/test_slider_logic.py
+@@ -0,0 +1,66 @@
++# Copyright (C) 2025
++# Licensed under the GPL-3.0 License.
++# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
++
++from pathlib import Path
++
++from tagstudio.core.library.alchemy.fields import SliderField
++from tagstudio.core.library.alchemy.library import Library
++from tagstudio.core.library.alchemy.models import Entry
++from tagstudio.core.utils.types import unwrap
++
++
++def create_slider_entry(
++    library: Library,
++    path: str,
++    value: int | float,
++    min: int | float,
++    max: int | float,
++    step: int | float,
++) -> int:
++    entry = Entry(
++        path=Path(path),
++        folder=unwrap(library.folder),
++        fields=[SliderField(type_key="SLIDER", value=value, min=min, max=max, step=step)],
++    )
++    return library.add_entries([entry])[0]
++
++
++def test_slider_has_configurable_minimum(library: Library):
++    entry_id = create_slider_entry(library, "test_min.txt", value=50, min=10, max=100.2, step=1)
++    retrieved_entry = unwrap(library.get_entry_full(entry_id))
++    assert retrieved_entry.slider_fields[0].min == 10
++
++
++def test_slider_has_configurable_maximum(library: Library):
++    entry_id = create_slider_entry(library, "test_max.txt", value=50, min=10, max=100.2, step=1)
++    retrieved_entry = unwrap(library.get_entry_full(entry_id))
++    assert retrieved_entry.slider_fields[0].max == 100.2
++
++
++def test_slider_has_configurable_step(library: Library):
++    entry_id = create_slider_entry(library, "test_step.txt", value=50, min=10, max=100.2, step=1)
++    retrieved_entry = unwrap(library.get_entry_full(entry_id))
++    assert retrieved_entry.slider_fields[0].step == 1
++
++
++def test_slider_handles_value_below_minimum(library: Library):
++    entry_id = create_slider_entry(
++        library, "test_min_handle.txt", value=3, min=10, max=100.2, step=1
++    )
++    retrieved_entry = unwrap(library.get_entry_full(entry_id))
++    assert retrieved_entry.slider_fields[0].value == 10
++
++
++def test_slider_handles_value_above_maximum(library: Library):
++    entry_id = create_slider_entry(
++        library, "test_max_handle.txt", value=105.3, min=10, max=100.2, step=1
++    )
++    retrieved_entry = unwrap(library.get_entry_full(entry_id))
++    assert retrieved_entry.slider_fields[0].value == 100.2
++
++
++def test_slider_inherits_numeric_functionality(library: Library):
++    entry_id = create_slider_entry(library, "test_inherit.txt", value=50, min=10, max=100.2, step=1)
++    retrieved_entry = unwrap(library.get_entry_full(entry_id))
++    assert retrieved_entry.slider_fields[0].value == 50
